@@ -75,6 +75,7 @@ Go to **Settings → Secrets and variables → Actions** and add:
 |---|---|
 | `/opt/stacks` | Docker Compose files (managed by this repo) |
 | `/srv/media` | Movies, TV, music for the *arr / Jellyfin stack |
+| `/srv/photos` | Immich library and database |
 | `/srv/backups` | Borgmatic backup repository target |
 | `/srv/monitoring` | Prometheus / Grafana persistent data |
 

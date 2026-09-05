@@ -34,9 +34,10 @@ Default NAS storage paths (`ansible/group_vars/nas.yml`):
 
 ```yaml
 storage_paths:
-  - { path: /opt/stacks,   mode: "0755" }
-  - { path: /srv/media,    mode: "0755" }
-  - { path: /srv/backups,  mode: "0750" }
+  - { path: /opt/stacks,     mode: "0755" }
+  - { path: /srv/media,      mode: "0755" }
+  - { path: /srv/photos,     mode: "0750" }
+  - { path: /srv/backups,    mode: "0750" }
   - { path: /srv/monitoring, mode: "0755" }
 ```
 
