@@ -56,6 +56,25 @@ jobs:
         run: |
           echo "==> Validating ${{ matrix.stack }}"
           docker compose -f ${{ matrix.stack }}/docker-compose.yml config --quiet
+        env:
+          # Dummy values so ${VAR} interpolation does not produce empty specs.
+          TZ: Europe/Prague
+          PUID: "1000"
+          PGID: "1000"
+          MEDIA_ROOT: /srv/media
+          MOVIES_DIR: /srv/media/movies
+          TV_DIR: /srv/media/tv
+          MUSIC_DIR: /srv/media/music
+          BACKUP_ROOT: /srv/backups
+          BORG_REPO: ssh://borg@nas/./repo
+          BORG_PASSPHRASE: dummy
+          PHOTOS_ROOT: /srv/photos
+          UPLOAD_LOCATION: /srv/photos/immich
+          DB_DATA_LOCATION: /srv/photos/postgres
+          DB_PASSWORD: dummy
+          PROMETHEUS_RETENTION: 30d
+          GRAFANA_ADMIN_USER: admin
+          GRAFANA_ADMIN_PASSWORD: dummy
 
   ansible-check:
     name: "Ansible syntax check"
