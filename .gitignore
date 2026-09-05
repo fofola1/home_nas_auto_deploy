@@ -1,0 +1,31 @@
+# ─── Secrets / credentials ────────────────────────────────────────────────────
+*.pem
+*.key
+id_rsa
+id_ed25519
+id_ecdsa
+*.secret
+**/secrets/
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+**/.env          # Never commit real .env files — use .env.example
+**/*.env.local
+
+# ─── Ansible ──────────────────────────────────────────────────────────────────
+*.retry
+.vault_pass
+ansible/inventory/hosts_generated.yml
+
+# ─── Logs / artifacts ─────────────────────────────────────────────────────────
+*.log
+logs/
+artifacts/
+.deploy-state/
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
