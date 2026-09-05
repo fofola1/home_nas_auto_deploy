@@ -15,5 +15,8 @@ services:
       - /srv/media:/source/media:ro
       - /opt/stacks:/source/stacks:ro
       - /etc/borgmatic.d:/etc/borgmatic.d
-    command: /bin/sh -c "trap : TERM INT; sleep infinity & wait"
+    command:
+      - /bin/sh
+      - -c
+      - "trap : TERM INT; sleep infinity & wait"
     restart: unless-stopped
