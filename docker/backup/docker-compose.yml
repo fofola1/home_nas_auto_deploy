@@ -1,0 +1,19 @@
+# docker/backup/docker-compose.yml
+# Off-site-capable backups with Borgmatic, running on the NAS.
+# Configure BORG_REPO / BORG_PASSPHRASE via .env.
+services:
+  borgmatic:
+    image: ghcr.io/borgbase/borgmatic:latest
+    container_name: borgmatic
+    hostname: nas
+    environment:
+      - TZ=${TZ:-Europe/Prague}
+      - BORG_PASSPHRASE=${BORG_PASSPHRASE}
+      - BORG_REPO=${BORG_REPO}
+    volumes:
+      - /srv/backups/repo:${BACKUP_ROOT}/repo
+      - /srv/media:/source/media:ro
+      - /opt/stacks:/source/stacks:ro
+      - /etc/borgmatic.d:/etc/borgmatic.d
+    command: /bin/sh -c "trap : TERM INT; sleep infinity & wait"
+    restart: unless-stopped
