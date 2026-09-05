@@ -52,4 +52,7 @@ Each stack under `docker/<stack>/` reads a `.env` file. Commit only
 | `media` | `MEDIA_ROOT` | `/srv/media` |
 | `backup` | `BACKUP_ROOT` | `/srv/backups` |
 | `backup` | `BORG_REPO` | `ssh://borg@nas/./repo` |
+| `photos` | `PHOTOS_ROOT` | `/srv/photos` |
+| `photos` | `UPLOAD_LOCATION` | `/srv/photos/immich` |
+| `photos` | `DB_PASSWORD` | immich database password |
 | `monitoring` | `PROMETHEUS_RETENTION` | `30d` |

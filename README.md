@@ -52,6 +52,7 @@ Every push to `main` triggers a pipeline that:
 │       └── runner.yml        # Runner maintenance (rarely used here)
 ├── docker/
 │   ├── media/                # Jellyfin + the *arr stack
+│   ├── photos/               # Immich photo backup
 │   ├── backup/               # Borgmatic backups
 │   └── monitoring/           # Grafana, Prometheus, node-exporter, kuma
 ├── scripts/

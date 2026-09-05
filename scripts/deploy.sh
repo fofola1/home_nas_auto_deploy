@@ -21,6 +21,7 @@ AVAILABLE_STACKS=(
   media
   backup
   monitoring
+  photos
 )
 
 # Stacks requested via CLI args, or all of them.
