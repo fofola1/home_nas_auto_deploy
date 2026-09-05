@@ -1,0 +1,15 @@
+---
+# .yamllint
+extends: default
+ignore: |
+  .git/**
+  .github/workflows/*.yml
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  document-start:
+    present: false
+  truthy:
+    check-keys: false
