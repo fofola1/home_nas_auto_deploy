@@ -133,7 +133,7 @@ jobs:
           fi
 
       - name: "Send Ntfy notification"
-        if: secrets.NTFY_URL != ''
+        if: env.NTFY_URL != ''
         run: |
           curl -fsS \
             -H "Title: NAS Deploy ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.status }}" \
@@ -144,6 +144,8 @@ jobs:
           By: ${{ github.actor }}
           Jobs: ${{ join(needs.*.result, ', ') }}" \
             "${{ secrets.NTFY_URL }}" || echo "Notification failed (non-blocking)"
+        env:
+          NTFY_URL: ${{ secrets.NTFY_URL }}
 
       - name: "Log deployment result"
         run: |
