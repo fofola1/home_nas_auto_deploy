@@ -1,0 +1,11 @@
+---
+# ansible/group_vars/nas.yml
+# NAS-specific variables. A single source of truth for paths the deploys use.
+
+storage_paths:
+  - { path: /opt/stacks,       mode: "0755" }
+  - { path: /srv/media,        mode: "0755" }
+  - { path: /srv/backups,      mode: "0750" }
+  - { path: /srv/monitoring,   mode: "0755" }
+
+deploy_user: root

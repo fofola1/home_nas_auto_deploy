@@ -1,0 +1,33 @@
+---
+# ansible/playbooks/runner.yml
+# Runner host maintenance. Mostly documentation — the runner service is
+# installed manually once (see docs/setup-guide.md), but this keeps a
+# declarative record so a rebuild is quick to reproduce.
+#
+# Targets:
+#   ansible-playbook playbooks/runner.yml --limit runners
+
+- name: "Maintain runner host"
+  hosts: runners
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: "Ensure ~/actions-runner directory exists"
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/actions-runner"
+        state: directory
+        mode: "0700"
+        owner: "{{ ansible_user }}"
+
+    - name: "Show runner service status if present"
+      ansible.builtin.command: systemctl is-active actions.runner.*
+      register: runner_service
+      changed_when: false
+      failed_when: false
+
+    - name: "Report runner service state"
+      ansible.builtin.debug:
+        msg: "Runner service active: {{ item }}"
+      loop: "{{ runner_service.stdout_lines }}"
+      when: runner_service.rc == 0

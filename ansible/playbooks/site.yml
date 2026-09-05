@@ -1,0 +1,14 @@
+---
+# ansible/playbooks/site.yml
+# Master playbook. Imports the sub-playbooks in dependency order.
+#
+# Usage:
+#   ansible-playbook playbooks/site.yml --limit nas
+#   ansible-playbook playbooks/site.yml --limit runners
+#   ansible-playbook playbooks/site.yml            # everything
+
+- name: "Provision NAS (Docker host)"
+  import_playbook: nas.yml
+
+- name: "Maintain runner host"
+  import_playbook: runner.yml

@@ -1,0 +1,8 @@
+# ansible/requirements.yml
+# Pin Galaxy collection versions for reproducible runs.
+# Install: ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: ansible.posix
+    version: ">=1.5.4"
+  - name: community.general
+    version: ">=9.0.0"

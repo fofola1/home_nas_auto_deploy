@@ -1,0 +1,58 @@
+---
+# ansible/playbooks/nas.yml
+# NAS provisioning: install Docker, create storage layout, seed stack dirs.
+# Idempotent — safe to re-run after a failed run or for repairs.
+#
+# Targets:
+#   ansible-playbook playbooks/nas.yml --limit nas
+
+- name: "Provision NAS"
+  hosts: nas_hosts
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: "Create storage directories"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        mode: "{{ item.mode }}"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+      loop: "{{ storage_paths }}"
+
+    - name: "Check if docker is installed"
+      ansible.builtin.command: docker --version
+      register: docker_check
+      changed_when: false
+      failed_when: false
+
+    - name: "Install Docker prerequisites"
+      when: docker_check.rc != 0
+      block:
+        - name: "Install docker.io"
+          ansible.builtin.apt:
+            name: docker.io
+            state: present
+            update_cache: true
+
+        - name: "Install docker compose v2 plugin"
+          ansible.builtin.apt:
+            name: docker-compose-v2
+            state: present
+
+        - name: "Enable and start docker service"
+          ansible.builtin.systemd_service:
+            name: docker
+            enabled: true
+            state: started
+
+    - name: "Seed /opt/stacks with placeholder compose directories"
+      ansible.builtin.file:
+        path: "/opt/stacks/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - media
+        - backup
+        - monitoring
