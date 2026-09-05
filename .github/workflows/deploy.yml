@@ -57,11 +57,10 @@ jobs:
 
       - name: "Wait for NAS to be reachable"
         run: |
-          NAS_IP="10.10.10.20"
-          echo "Waiting for SSH on ${NAS_IP}..."
+          echo "Waiting for SSH on ${{ vars.NAS_HOST }}..."
           for i in $(seq 1 20); do
             if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
-                -o BatchMode=yes root@${NAS_IP} \
+                -o BatchMode=yes ${{ vars.NAS_USER }}@${{ vars.NAS_HOST }} \
                 'true' 2>/dev/null; then
               echo "✅ NAS is reachable."
               break
@@ -107,7 +106,7 @@ jobs:
 
       - name: "List running containers on NAS"
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ vars.NAS_USER }}@10.10.10.20 \
+          ssh -o StrictHostKeyChecking=no ${{ vars.NAS_USER }}@${{ vars.NAS_HOST }} \
             "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
 
   notify:
