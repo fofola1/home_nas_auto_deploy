@@ -1,0 +1,77 @@
+###############################################################################
+# .github/workflows/ci.yml
+# Validation pipeline. Runs on every push/PR on the self-hosted runner.
+#   - shell lint on scripts/*
+#   - docker compose config for every stack (media, backup, monitoring)
+#   - ansible-playbook --syntax-check on all playbooks
+###############################################################################
+
+name: "CI"
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  STACKS_DIR: "./docker"
+
+jobs:
+
+  shell-lint:
+    name: "Shell lint"
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Shellcheck scripts"
+        run: |
+          if command -v shellcheck >/dev/null 2>&1; then
+            shellcheck scripts/*.sh
+          else
+            echo "::warning::shellcheck not installed on runner, skipping"
+          fi
+
+  compose-config:
+    name: "Docker compose config"
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Validate compose files"
+        working-directory: ${{ env.STACKS_DIR }}
+        run: |
+          for stack in media backup monitoring; do
+            echo "==> Validating ${stack}"
+            docker compose -f ${stack}/docker-compose.yml config --quiet
+          done
+
+  ansible-check:
+    name: "Ansible syntax check"
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Install ansible-core"
+        run: |
+          pip3 install --quiet ansible-core
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: "Syntax check playbooks"
+        working-directory: ansible
+        run: |
+          ansible-playbook playbooks/site.yml \
+            --syntax-check \
+            --inventory inventory/hosts.yml

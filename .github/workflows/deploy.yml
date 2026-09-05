@@ -1,0 +1,150 @@
+###############################################################################
+# .github/workflows/deploy.yml
+# Deployment pipeline. Runs on the self-hosted runner on homelab, deploying
+# the docker stacks to the NAS over the LAN.
+#
+# Jobs:
+#   deploy  → rsync stacks + docker compose up on the NAS
+#   verify  → post-deploy health check
+#   notify  → Ntfy push with the outcome
+#
+# Required Secrets:
+#   SSH_PRIVATE_KEY     — runner → NAS ed25519 key
+#   NTFY_URL            — optional Ntfy topic for notifications
+#
+# Required Variables:
+#   RUNNER_HOST         — homelab IP (10.10.10.20)
+#   NAS_HOST            — NAS IP (10.10.10.21)
+#   NAS_USER            — SSH user on the NAS (root)
+###############################################################################
+
+name: "Deploy"
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      stack:
+        description: "Stack(s) to deploy (comma separated: media,backup,monitoring,all)"
+        required: false
+        type: string
+        default: "all"
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+
+  deploy:
+    name: "🚀 Deploy to NAS"
+    runs-on: self-hosted
+    timeout-minutes: 30
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Setup SSH agent"
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: "Wait for NAS to be reachable"
+        run: |
+          NAS_IP="10.10.10.20"
+          echo "Waiting for SSH on ${NAS_IP}..."
+          for i in $(seq 1 20); do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+                -o BatchMode=yes root@${NAS_IP} \
+                'true' 2>/dev/null; then
+              echo "✅ NAS is reachable."
+              break
+            fi
+            if [ "${i}" -eq 20 ]; then
+              echo "❌ NAS did not become reachable."
+              exit 1
+            fi
+            echo "  Attempt ${i}/20, retrying in 10s..."
+            sleep 10
+          done
+
+      - name: "Run deploy script"
+        run: |
+          STACKS="${{ github.event.inputs.stack }}"
+          if [ -z "${STACKS}" ] || [ "${STACKS}" = "all" ]; then
+            ./scripts/deploy.sh
+          else
+            IFS=',' read -ra ARR <<< "${STACKS}"
+            ./scripts/deploy.sh "${ARR[@]}"
+          fi
+        env:
+          NAS_HOST: ${{ vars.NAS_HOST }}
+          NAS_USER: ${{ vars.NAS_USER }}
+
+  verify:
+    name: "🔎 Health check"
+    runs-on: self-hosted
+    needs: deploy
+    timeout-minutes: 10
+
+    steps:
+      - name: "Setup SSH agent"
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: "Run healthcheck script"
+        run: ./scripts/healthcheck.sh
+        env:
+          NAS_HOST: ${{ vars.NAS_HOST }}
+          NAS_USER: ${{ vars.NAS_USER }}
+
+      - name: "List running containers on NAS"
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ vars.NAS_USER }}@10.10.10.20 \
+            "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+
+  notify:
+    name: "📣 Notify"
+    runs-on: self-hosted
+    needs: [deploy, verify]
+    if: always()
+
+    steps:
+      - name: "Determine pipeline status"
+        id: status
+        run: |
+          if echo "${{ join(needs.*.result, ' ') }}" | grep -qE '(failure|cancelled)'; then
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "status=FAILED" >> $GITHUB_OUTPUT
+            echo "priority=high" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "status=SUCCESS" >> $GITHUB_OUTPUT
+            echo "priority=default" >> $GITHUB_OUTPUT
+          fi
+
+      - name: "Send Ntfy notification"
+        if: secrets.NTFY_URL != ''
+        run: |
+          curl -fsS \
+            -H "Title: NAS Deploy ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.status }}" \
+            -H "Priority: ${{ steps.status.outputs.priority }}" \
+            -H "Tags: ${{ steps.status.outputs.status == 'SUCCESS' && 'white_check_mark' || 'x' }}" \
+            -d "Commit: ${{ github.sha }}
+          Branch: ${{ github.ref_name }}
+          By: ${{ github.actor }}
+          Jobs: ${{ join(needs.*.result, ', ') }}" \
+            "${{ secrets.NTFY_URL }}" || echo "Notification failed (non-blocking)"
+
+      - name: "Log deployment result"
+        run: |
+          echo "Status   : ${{ steps.status.outputs.status }}"
+          echo "Commit   : ${{ github.sha }}"
+          echo "Branch   : ${{ github.ref_name }}"
