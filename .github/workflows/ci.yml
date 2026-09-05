@@ -43,17 +43,19 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
 
+    strategy:
+      matrix:
+        stack: [media, backup, monitoring, photos]
+
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v4
 
-      - name: "Validate compose files"
+      - name: "Validate compose file"
         working-directory: ${{ env.STACKS_DIR }}
         run: |
-          for stack in media backup monitoring; do
-            echo "==> Validating ${stack}"
-            docker compose -f ${stack}/docker-compose.yml config --quiet
-          done
+          echo "==> Validating ${{ matrix.stack }}"
+          docker compose -f ${{ matrix.stack }}/docker-compose.yml config --quiet
 
   ansible-check:
     name: "Ansible syntax check"
