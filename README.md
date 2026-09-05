@@ -48,7 +48,7 @@ Every push to `main` triggers a pipeline that:
 │   │   └── hosts.yml         # homelab (runner) + nas (target)
 │   └── playbooks/
 │       ├── site.yml          # Master playbook
-│       ├── ras.yml           # NAS provisioning
+│       ├── nas.yml           # NAS provisioning
 │       └── runner.yml        # Runner maintenance (rarely used here)
 ├── docker/
 │   ├── media/                # Jellyfin + the *arr stack
