@@ -47,8 +47,9 @@ for stack in "${STACKS[@]}"; do
     "${NAS_USER}@${NAS_HOST}:/opt/stacks/${stack}/"
 
   echo "==> Rolling out '${stack}' on the NAS"
-  ssh "${SSH_OPTS[@]}" "${NAS_USER}@${NAS_HOST}" \
-    "cd /opt/stacks/${stack} && docker compose pull --quiet && docker compose up -d --remove-orphans"
+  REMOTE_CMD="cd /opt/stacks/${stack} && docker compose pull --quiet && docker compose up -d --remove-orphans"
+  # shellcheck disable=SC2029 # variable expansion is intentionally local
+  ssh "${SSH_OPTS[@]}" "${NAS_USER}@${NAS_HOST}" "${REMOTE_CMD}"
 
   echo "✅ ${stack} deployed"
 done
